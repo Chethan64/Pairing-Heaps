@@ -48,6 +48,95 @@ class pairingHeap {
 
         template<typename T1>
         friend void meld(pairingHeap& heap, pairingHeap& heap1, pairingHeap& heap2);
+
+        class iterator {
+            private:
+                node* p_it_;
+                pairingHeap<T, compare>* temp;
+                int exhaustive_ = 1;
+                pairingHeap<T, compare>* ne_heap;
+            
+            public:
+                iterator() : p_it_(nullptr), temp(nullptr) {}
+                iterator(pairingHeap<T, compare>* temp_, node* p_it, int exhaustive) : p_it_(p_it), temp(temp_), exhaustive_(exhaustive) {
+                    if(exhaustive_)
+                        ne_heap = nullptr;
+                    else
+                        ne_heap = new pairingHeap();
+                }
+                
+                iterator& next()
+                {
+                    T temp_value = temp->extract_minimum();
+                    p_it_ = temp->root_;
+
+                    if(!exhaustive_)
+                        ne_heap->insert(temp_value);
+
+                    cout << "\n\n\nTemp\n";
+                    temp->display();
+                    cout << "\nNEHEAP\n";
+                    ne_heap->display();
+                    cout << "\n\n\n";
+
+                    return *this;
+                } 
+               
+                T operator*()
+                {
+                    return p_it_->data;
+                }  
+
+                void stop_iterator()
+                {
+                    if(!exhaustive_)
+                    {
+                            if(temp->root_ == nullptr)
+                            {
+                                temp->size_ = ne_heap->size_;
+                                temp->root_ = ne_heap->clone_heap(ne_heap->root_);
+                                delete ne_heap;
+                                return;
+                            }
+                            compare comparator_;
+                            if(comparator_(temp->root_->data,ne_heap->root_->data))
+                            {
+                                typename pairingHeap<T, compare>::node* ne_heap_clone = ne_heap->clone_heap(ne_heap->root_);
+                                typename pairingHeap<T, compare>::node* temp_node = temp->root_->left;
+                                temp->root_->left = ne_heap_clone;
+                                ne_heap_clone->right = temp_node;
+                                temp->size_ = temp->size_ + ne_heap->size_;
+                            }
+                            else
+                            {
+                                typename pairingHeap<T, compare>::node* ne_heap_clone = ne_heap->clone_heap(ne_heap->root_);
+                                typename pairingHeap<T, compare>::node* temp_node = ne_heap_clone->left;
+                                ne_heap_clone->left = temp->root_;
+                                temp->root_->right = temp_node;
+                                temp->size_ = temp->size_ + ne_heap->size_;
+                                temp->root_ = ne_heap_clone;
+                            }
+                            delete ne_heap;
+                        
+                        
+                        
+                        
+                        // meld(*temp,*temp,*ne_heap);
+                        // node* ne_heap_root = ne_heap->clone_heap(ne_heap->root_);
+                        // node* temp_root = temp->clone_heap(temp->root_);
+                        // node* merged_node = temp->merge_node(temp_root, ne_heap_root);
+                        // temp->destroy_heap(temp->root_);
+                        // temp->root_ = merged_node;
+                        // delete ne_heap;
+                    }
+                }
+
+        };
+
+        iterator get_iterator(int exhaustive = 1)
+        {
+            return iterator(this, this->root_, exhaustive);
+        }
 };
 
 template<typename T, typename compare>

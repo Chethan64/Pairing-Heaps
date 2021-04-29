@@ -4,7 +4,7 @@
 template <class T> 
 class more {
     public:
-        bool operator() (const T& x, const T& y) const {return ((x%10) > (y%10));}
+        bool operator() (const T& x, const T& y) const {return x>y;}
 };
 
 int main()
@@ -12,7 +12,24 @@ int main()
     pairingHeap<int,more<int>> p1;
     p1.insert(61);
     p1.insert(25);
+    p1.insert(17);
+    p1.insert(8);
+    p1.insert(21);
     p1.display();
+
+    pairingHeap<int,more<int>>::iterator it;
+    it = p1.get_iterator(0);
+    cout << "\n\n";
+    cout << *it << "\n";
+    it.next();
+    cout << *it << "\n";
+    it.next();
+    it.stop_iterator();
+    cout << "\n\n\n";
+    p1.display();
+    
+
+    // p1.display();
 
     // pairingHeap<int,more<int>> p2;
     // p2.insert(5);
