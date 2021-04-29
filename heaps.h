@@ -15,20 +15,20 @@ class pairingHeap {
         node* make_node(int data) const;
         void display_wrapper(node* root) const;
         void destroy_heap(node* root);
+        node* clone_heap(node* root);
         node* merge_node(node* node1, node* node2);
         void find_wrapper(node* parent, node* child, int data, node** remove_parent);
-        void inorder(node* root);
-        node* clone(node* root);
+        void inorder(node* root);  
         pairingHeap(node* root):size_(0), root_(root) {}
-        pairingHeap& operator=(const pairingHeap& rhs);
         
     public:
         pairingHeap():size_(0), root_(nullptr) {}
         pairingHeap(pairingHeap& heap):root_(nullptr)
         { 
-            this->root_ = this->clone(heap.root_); 
+            this->root_ = this->clone_heap(heap.root_); 
             this->size_ = heap.size_; 
         }
+        pairingHeap& operator=(pairingHeap& rhs);
         ~pairingHeap();
         bool is_empty() const;
         void display() const;
@@ -39,6 +39,16 @@ class pairingHeap {
         int remove_element(int data);
         int size();
         void inorder_wrap();
+        void flip_heap(pairingHeap& heap);
+        
+        template<typename InputIterator>
+        void heapify(InputIterator first, InputIterator last)
+        {
+            while(first != last)
+            {
+                insert(*first++);
+            }
+        }   
 
-        friend pairingHeap meld(pairingHeap& p1, pairingHeap& p2);
+        friend void meld(pairingHeap& heap, pairingHeap& heap1, pairingHeap& heap2);
 };

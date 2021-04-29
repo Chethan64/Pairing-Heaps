@@ -11,10 +11,8 @@ pairingHeap::node* pairingHeap::make_node(int data) const
 
 pairingHeap::~pairingHeap()
 {
-    cout << "Destroying " << this << "\n";
     this->destroy_heap(this->root_);
     this->root_ = nullptr;
-    delete this;
 }
 
 void pairingHeap::destroy_heap(node* root)
@@ -47,47 +45,52 @@ bool pairingHeap::is_empty() const
     return this->root_ == nullptr;
 }
 
-pairingHeap& pairingHeap::operator=(const pairingHeap& rhs)
+pairingHeap& pairingHeap::operator=(pairingHeap& rhs)
 {
     if(this != &rhs)
     {
-        this->root_ = clone(rhs->root_);
-        this->size_ = rhs->size_;
-        delete &rhs;
+        destroy_heap(this->root_);
+        this->root_ = clone_heap(rhs.root_);
+        this->size_ = rhs.size_;
     }
+    return *this;
 }
 
-pairingHeap meld(pairingHeap& heap1, pairingHeap& heap2)
+void meld(pairingHeap& heap, pairingHeap& heap1, pairingHeap& heap2)
 {
     if(heap1.root_ == nullptr)
     {
-        pairingHeap heap(heap2);
-        return heap;
+        heap.size_ = heap2.size_;
+        heap.root_ = heap.clone_heap(heap2.root_);
+        return;
     }
 
     if(heap2.root_ == nullptr)
     {
-        pairingHeap heap(heap1);    
-        return heap;
+        heap.size_ = heap1.size_;
+        heap.root_ = heap.clone_heap(heap1.root_);
+        return;
     }
 
     if(heap1.root_->data < heap2.root_->data)
     {
-        pairingHeap* heap3 = new pairingHeap(heap1);
-        pairingHeap* heap4 = new pairingHeap(heap2);
-        pairingHeap::node* temp = heap3->root_->left;
-        heap3->root_->left = heap4->root_;
-        heap4->root_->right = temp;
-        return *heap3;
+        pairingHeap heap3(heap1);
+        pairingHeap heap4(heap2);
+        pairingHeap::node* temp = heap3.root_->left;
+        heap3.root_->left = heap4.root_;
+        heap4.root_->right = temp;
+        heap.size_ = heap3.size_ + heap4.size_;
+        heap.root_ = heap.clone_heap(heap3.root_);
     }
     else
     {
-        pairingHeap* heap3 = new pairingHeap(heap1);
-        pairingHeap* heap4 = new pairingHeap(heap2);
-        pairingHeap::node* temp = heap4->root_->left;
-        heap4->root_->left = heap3->root_;
-        heap3->root_->right = temp;
-        return *heap4;
+        pairingHeap heap3(heap1);
+        pairingHeap heap4(heap2);
+        pairingHeap::node* temp = heap4.root_->left;
+        heap4.root_->left = heap3.root_;
+        heap3.root_->right = temp;
+        heap.size_ = heap4.size_ + heap3.size_;
+        heap.root_ = heap.clone_heap(heap4.root_);
     }
 }
 
@@ -290,6 +293,15 @@ int pairingHeap::remove_element(int data)
     return 1;
 }
 
+// template<typename InputIterator>
+// void pairingHeap::heapify(InputIterator first, InputIterator last)
+// {
+//     while(first != last)
+//     {
+//         insert(*first++);
+//     }
+// }
+
 void pairingHeap::display_wrapper(node* root) const
 {
     if(root == nullptr)
@@ -336,14 +348,14 @@ void pairingHeap::inorder(node* root)
     }
 }
 
-pairingHeap::node* pairingHeap::clone(node* root)
+pairingHeap::node* pairingHeap::clone_heap(node* root)
 {
     if(root == nullptr)
         return nullptr;
 
     node* clone_root = (node*)malloc(sizeof(node));
     clone_root->data = root->data;
-    clone_root->left = clone(root->left);
-    clone_root->right = clone(root->right);
+    clone_root->left = clone_heap(root->left);
+    clone_root->right = clone_heap(root->right);
     return clone_root;
 }
