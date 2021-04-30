@@ -15,19 +15,35 @@ int main()
     p1.insert(17);
     p1.insert(8);
     p1.insert(21);
-    p1.display();
-
-    pairingHeap<int,more<int>>::iterator it;
-    it = p1.get_iterator(0);
-    cout << "\n\n";
-    cout << *it << "\n";
-    it.next();
-    cout << *it << "\n";
-    it.next();
-    it.stop_iterator();
-    cout << "\n\n\n";
+    p1.insert(233);
+    p1.insert(456);
+    p1.insert(55);
+    p1.insert(3);
+    p1.insert(37);
     p1.display();
     
+    pairingHeap<int,more<int>> p2;
+    p2.insert(43);
+    p2.insert(54);
+    p2.display();
+
+    pairingHeap<int,more<int>> p3;
+    meld(p3,p1,p2);
+    p3.display();
+    // cout << "\n\n" << p1.extract_minimum() << "\n\n\n";
+    // p1.display();
+
+    // pairingHeap<int,more<int>>::exhaustive_iterator it;
+    // it = p1.get_exhaustive_iterator();
+    // cout << *it << "\n";
+    // it.next();
+    // cout << *it << "\n";
+    // it.next();
+    // cout << *it << "\n";
+    // cout << "\n\n\n";
+    // p1.display();
+    // cout << "\n\n";
+    // p1.inorder_wrap();
 
     // p1.display();
 
