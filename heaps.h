@@ -507,8 +507,6 @@ void create_heap(pairingHeap<T, compare>& pair1, pairingHeap<T, compare_>& pair2
 
     while(temp_heap.root_ != nullptr)
     {
-        // T temp_value = *it;
-        cout << sizeof(*it) << "\n";
         pair1.insert(*it);
         it.next();
     }
