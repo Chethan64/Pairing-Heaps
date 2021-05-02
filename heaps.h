@@ -19,7 +19,7 @@ class pairingHeap {
         // Private data members
         int size_;
         node* root_;
-        node* end_;
+        node end_;
         compare comparator;
         
         // Private member functions
@@ -100,6 +100,7 @@ class pairingHeap {
         class iterator {
             private:
                 node* p_it_;
+                node* flag;
                 pairingHeap<T, compare>* temp;
                 pairingHeap<T, compare>* ne_heap;
             
@@ -113,17 +114,11 @@ class pairingHeap {
 
                 // Constructors
                 iterator() : p_it_(nullptr), temp(nullptr) {}
-                // iterator(iterator& it) {
-                //     this->p_it_ = it.p_it_;
-                //     this->temp = it.temp;
-                //     this->ne_heap = it.ne_heap;
-                //     temp->end_.left = temp->end_.right = nullptr;
-                //     temp->end_.data = T();
-                // }
+
                 iterator(pairingHeap<T, compare>* temp_, node* p_it) : p_it_(p_it), temp(temp_), ne_heap(new pairingHeap()) {
-                    temp->end_ = (node*)malloc(sizeof(node));
-                    temp->end_->left = temp->end_->right = nullptr;
-                    temp->end_->data = T();
+                    temp->end_.left = temp->end_.right = nullptr;
+                    temp->end_.data = T();
+                    flag = nullptr;
                 }
                 
                 // Public member functions
@@ -141,25 +136,37 @@ class pairingHeap {
                 iterator operator++(int);
 
                 bool operator==(iterator& it)
-                {
+                {                    
                     bool equal = (this->p_it_ == it.p_it_);
+                    
+                    if(flag == this->p_it_)
+                    {
+                        if((temp->root_ != nullptr) && (ne_heap->root_ == nullptr) && equal)
+                            return 1;
+                        
+                        if(temp->size() == 1)
+                            temp->root_->left = nullptr;
+
+                        this->stop_iterator();
+                        ne_heap->root_ = nullptr;
+                        delete ne_heap;
+                        return equal;
+                    }
+                    flag = this->p_it_;
 
                     if(equal)
-                    {
+                    {  
                         temp->root_ = nullptr;
-                        // this->stop_iterator();
-                        // ne_heap->display();
-                        temp->size_ = ne_heap->size_;
-                        // temp->end_ = nullptr;
-                        temp->root_ = ne_heap->clone_heap(ne_heap->root_);
-                        delete ne_heap;
+                        this->stop_iterator();
+                        ne_heap->root_ = nullptr;
                     }
+                    
                     return equal;
                 }
 
                 bool operator!=(iterator& it)
                 {
-                    return !this->operator==(it);;
+                    return !(this->operator==(it));
                 }
         };
 
@@ -170,7 +177,7 @@ class pairingHeap {
 
         iterator end()
         {
-            return iterator(this, this->end_);
+            return iterator(this, &this->end_);
         }
 };
 
@@ -195,15 +202,10 @@ typename pairingHeap<T, compare>::iterator& pairingHeap<T, compare>::iterator::o
 {
     T temp_value = temp->extract_root();
     p_it_ = temp->root_;
-    cout << "Size: " << temp->size_ << "\n";
-    cout << p_it_->data << "\n";
     ne_heap->insert(temp_value);
 
-    if((p_it_->left == nullptr) && (p_it_->right == nullptr) && (p_it_ != temp->end_))
-    {
-        temp->root_->left = temp->end_;
-        cout << "Kill me\n";
-    }
+    if((p_it_->left == nullptr) && (p_it_->right == nullptr) && (p_it_ != &temp->end_))
+        p_it_->left = &temp->end_;
 
     return *this;
 }
@@ -228,6 +230,12 @@ void pairingHeap<T, compare>::iterator::stop_iterator()
     {
         temp->size_ = ne_heap->size_;
         temp->root_ = ne_heap->clone_heap(ne_heap->root_);
+        delete ne_heap;
+        return;
+    }
+
+    if(ne_heap->is_empty())
+    {
         delete ne_heap;
         return;
     }
@@ -765,7 +773,6 @@ typename pairingHeap<T, compare>::node* pairingHeap<T, compare>::clone_heap(cons
         return nullptr;
 
     node* clone_root = (node*)malloc(sizeof(node));
-    // cout << "Cloning: " << root->data << "\n";
     clone_root->data = root->data;
     clone_root->left = clone_heap(root->left);
     clone_root->right = clone_heap(root->right);
