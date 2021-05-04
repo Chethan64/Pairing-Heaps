@@ -13,6 +13,7 @@ class pairingHeap {
         typedef struct node {
             struct node* left;
             struct node* right;
+            struct node* parent;
             T data;
         } node;
 
@@ -26,10 +27,10 @@ class pairingHeap {
         node* make_node(const T data) const;
         void display_wrapper(node* root, int indent) const;
         void destroy_heap(node* root);
-        node* clone_heap(const node* root) const;
+        node* clone_heap(node* root) const;
         node* merge_node(node* node1, node* node2) const;
         void find_wrapper(node* parent, node* child, const T data, node** remove_parent) const;
-        void inorder(const node* root) const;  
+        node* inorder_successor(node* root) const;
         pairingHeap(node* root):size_(0), root_(root) {}
         
     public:
@@ -38,18 +39,28 @@ class pairingHeap {
         pairingHeap(const pairingHeap& heap):root_(nullptr)
         {
             this->root_ = this->clone_heap(heap.root_); 
+            if(this->root_)
+                this->root_->parent = nullptr;
             this->size_ = heap.size_; 
-        }
+        }  
+        pairingHeap(pairingHeap&& heap):root_(nullptr)
+        {
+            this->root_ = heap.root_;
+            this->size_ = heap.size_;
+            heap.root_ = nullptr;
+            heap.size_ = 0;
+        }     
         pairingHeap& operator=(const pairingHeap& pair1);
+        pairingHeap& operator=(pairingHeap&& pair1);
         ~pairingHeap();
         bool is_empty() const;
         void display() const;
         void insert(const T data);
         T find_root() const;
-        T extract_root();
+        void extract_root();
         int remove_element(const T data);
         int size() const;
-        void inorder_wrap() const;
+        void inorder() const; 
         void update_element(const T& data, const T& update);
 
         // Templatized friend functions
@@ -76,6 +87,12 @@ class pairingHeap {
             
             public:
                 // Public member functions - constructors
+                using iterator_category = std::forward_iterator_tag;
+                using difference_type   = int;
+                using value_type        = node;
+                using pointer           = node*; 
+                using reference         = node&; 
+                
                 exhaustive_iterator() : p_it_(nullptr), temp(nullptr) {}
                 exhaustive_iterator(pairingHeap<T, compare>* temp_, node* p_it) : p_it_(p_it), temp(temp_) {}
                 
@@ -107,7 +124,7 @@ class pairingHeap {
             public:
 
                 using iterator_category = std::forward_iterator_tag;
-                using difference_type   = std::ptrdiff_t;
+                using difference_type   = int;
                 using value_type        = node;
                 using pointer           = node*; 
                 using reference         = node&;  
@@ -138,7 +155,7 @@ class pairingHeap {
                 bool operator==(iterator& it)
                 {                    
                     bool equal = (this->p_it_ == it.p_it_);
-                    
+
                     if(flag == this->p_it_)
                     {
                         if((temp->root_ != nullptr) && (ne_heap->root_ == nullptr) && equal)
@@ -148,7 +165,9 @@ class pairingHeap {
                             temp->root_->left = nullptr;
 
                         this->stop_iterator();
+                        flag = nullptr;
                         ne_heap->root_ = nullptr;
+
                         delete ne_heap;
                         return equal;
                     }
@@ -179,6 +198,63 @@ class pairingHeap {
         {
             return iterator(this, &this->end_);
         }
+
+        // Inorder iterator - nested class
+        class inorder_iterator {
+            private:
+                node* p_it_;
+                pairingHeap<T, compare>* temp;
+            
+            public:
+
+                using iterator_category = std::forward_iterator_tag;
+                using difference_type   = int;
+                using value_type        = node;
+                using pointer           = node*; 
+                using reference         = node&;  
+
+                // Constructors
+                inorder_iterator() : p_it_(nullptr), temp(nullptr) {}
+
+                inorder_iterator(pairingHeap<T, compare>* temp_, node* p_it) : p_it_(p_it), temp(temp_) {}
+                
+                // Public member functions               
+                T operator*() const
+                {
+                    if(p_it_ != nullptr)
+                        return p_it_->data;
+                    else
+                        return T();
+                }
+
+                inorder_iterator& operator++();
+                inorder_iterator operator++(int);
+
+                bool operator==(inorder_iterator& it)
+                {                    
+                    return (this->p_it_ == it.p_it_);
+                }
+
+                bool operator!=(inorder_iterator& it)
+                {
+                    return !(this->operator==(it));
+                }
+        };
+
+        inorder_iterator cbegin()
+        {
+            pairingHeap<T, compare>::node* temp = this->root_;
+            
+            while(temp->left != nullptr)
+                temp = temp->left;
+            
+            return inorder_iterator(this, temp);
+        }
+
+        inorder_iterator cend()
+        {
+            return inorder_iterator(this, nullptr);
+        }
 };
 
 // Exhaustive Iterator class member functions
@@ -186,13 +262,14 @@ class pairingHeap {
 template<typename T, typename compare>
 typename pairingHeap<T, compare>::exhaustive_iterator& pairingHeap<T, compare>::exhaustive_iterator::next()
 {
-    T temp_value = temp->extract_root();
+    T temp_value = temp->find_root();
+    temp->extract_root();
     p_it_ = temp->root_;
 
     return *this;
 }
 
-// Non-exhaustive iterator class member functions
+// Iterator class member functions
 
 /* Pre-increment
 Function to move the iterator to point to the next root element, also inserts the 
@@ -200,7 +277,8 @@ deleted element into another heap - ne_heap*/
 template<typename T, typename compare>
 typename pairingHeap<T, compare>::iterator& pairingHeap<T, compare>::iterator::operator++()
 {
-    T temp_value = temp->extract_root();
+    T temp_value = temp->find_root();
+    temp->extract_root();
     p_it_ = temp->root_;
     ne_heap->insert(temp_value);
 
@@ -216,6 +294,28 @@ template<typename T, typename compare>
 typename pairingHeap<T, compare>::iterator pairingHeap<T, compare>::iterator::operator++(int post)
 {
     iterator temp(*this);
+    ++*this;
+    return temp;
+}
+
+// Inorder iterator class member functions
+
+/* Pre-increment
+Function to move the iterator to point to the next root element, also inserts the 
+deleted element into another heap - ne_heap*/
+template<typename T, typename compare>
+typename pairingHeap<T, compare>::inorder_iterator& pairingHeap<T, compare>::inorder_iterator::operator++()
+{
+    this->p_it_ = temp->inorder_successor(this->p_it_);
+    return *this;
+}
+
+/* Function to perform post increment by storing the value pointed to by the iterator before 
+performing pre-increment on it */
+template<typename T, typename compare>
+typename pairingHeap<T, compare>::inorder_iterator pairingHeap<T, compare>::inorder_iterator::operator++(int post)
+{
+    inorder_iterator temp(*this);
     ++*this;
     return temp;
 }
@@ -274,6 +374,7 @@ typename pairingHeap<T,compare>::node* pairingHeap<T, compare>::make_node(const 
     temp->data = data_;
     temp->left = nullptr;
     temp->right = nullptr;
+    temp->parent = nullptr;
     return temp;
 }
 
@@ -341,7 +442,24 @@ pairingHeap<T, compare>& pairingHeap<T, compare>::operator=(const pairingHeap<T,
     {
         destroy_heap(this->root_);
         this->root_ = clone_heap(rhs.root_);
+        if(this->root_)
+            this->root_->parent = nullptr;
         this->size_ = rhs.size_;
+    }
+    return *this;
+}
+
+/* Move assignment operator */
+template<typename T, typename compare>
+pairingHeap<T, compare>& pairingHeap<T, compare>::operator=(pairingHeap<T, compare>&& rhs)
+{
+    if(this != &rhs)
+    {
+        destroy_heap(this->root_);
+        this->root_ = rhs.root_;
+        this->size_ = rhs.size_;
+        rhs.root_ = nullptr;
+        rhs.size_ = 0;
     }
     return *this;
 }
@@ -357,6 +475,8 @@ void meld(pairingHeap<T, compare>& heap, const pairingHeap<T, compare>& heap1, c
     {
         heap.size_ = heap2.size_;
         heap.root_ = heap.clone_heap(heap2.root_);
+        if(heap.root_)
+            heap.root_->parent = nullptr;
         return;
     }
 
@@ -365,6 +485,8 @@ void meld(pairingHeap<T, compare>& heap, const pairingHeap<T, compare>& heap1, c
     {
         heap.size_ = heap1.size_;
         heap.root_ = heap.clone_heap(heap1.root_);
+        if(heap.root_)
+            heap.root_->parent = nullptr;
         return;
     }
 
@@ -378,6 +500,8 @@ void meld(pairingHeap<T, compare>& heap, const pairingHeap<T, compare>& heap1, c
         heap4.root_->right = temp;
         heap.size_ = heap3.size_ + heap4.size_;
         heap.root_ = heap3.clone_heap(heap3.root_);
+        if(heap.root_)
+            heap.root_->parent = nullptr;
         heap4.root_ = nullptr;
     }
     else
@@ -389,6 +513,8 @@ void meld(pairingHeap<T, compare>& heap, const pairingHeap<T, compare>& heap1, c
         heap3.root_->right = temp;
         heap.size_ = heap4.size_ + heap3.size_;
         heap.root_ = heap4.clone_heap(heap4.root_);
+        if(heap.root_)
+            heap.root_->parent = nullptr;
         heap3.root_ = nullptr;
     }
 }
@@ -414,13 +540,25 @@ typename pairingHeap<T, compare>::node* pairingHeap<T, compare>::merge_node(node
 
     // Decouple the nodes
     if(node2 == node1->right)
+    {
         node1->right = nullptr;
+        node2->parent = nullptr;
+    }
     else if(node2 == node1->left)
+    {
         node1->left = nullptr;
+        node2->parent = nullptr;
+    }
     else if(node1 == node2->right)
+    {
         node2->right = nullptr;
+        node1->parent = nullptr;
+    }
     else if(node1 == node2->left)
+    {
         node2->left = nullptr;
+        node1->parent = nullptr;
+    }
 
     // Merge node1 and node2 based on comparator function
     if(comparator(node1->data, node2->data))
@@ -428,6 +566,9 @@ typename pairingHeap<T, compare>::node* pairingHeap<T, compare>::merge_node(node
         node* temp_node = node1->left;
         node1->left = node2;
         node2->right = temp_node;
+        if(temp_node)
+            temp_node->parent = node2;
+        node2->parent = node1;
         return node1;
     }
     else
@@ -435,6 +576,9 @@ typename pairingHeap<T, compare>::node* pairingHeap<T, compare>::merge_node(node
         node* temp_node = node2->left;
         node2->left = node1;
         node1->right = temp_node;
+        if(temp_node)
+            temp_node->parent = node1;
+        node1->parent = node2;
         return node2;
     }
 }
@@ -449,10 +593,10 @@ int pairingHeap<T, compare>::size() const
 /* Function that removes the root, assigns new root based on left-to-right followed by right-to-left merging
 and returns the deleted root data */
 template<typename T, typename compare>
-T pairingHeap<T, compare>::extract_root()
+void pairingHeap<T, compare>::extract_root()
 {
     if(this->is_empty())
-        return T();
+        return;
 
     node* root = this->root_;
     node* pairs = nullptr;
@@ -466,7 +610,7 @@ T pairingHeap<T, compare>::extract_root()
         this->root_ = new_root;
         this->size_ = 0;
         free(root);
-        return data;
+        return;
     }        
     
     // If the root has child nodes, next root has to be chosen based on the comparator function
@@ -474,7 +618,14 @@ T pairingHeap<T, compare>::extract_root()
     while((temp != nullptr) && (temp->right != nullptr))
     {
         node* next_pair = temp->right->right;  
+        temp->right->right = nullptr;
+        temp->parent = nullptr;
         node* temp_node = merge_node(temp,temp->right);
+        temp_node->parent = nullptr;
+        
+        if(pairs != nullptr)
+            pairs->parent = temp_node;
+            
         temp_node->right = pairs;
         pairs = temp_node;
         temp = next_pair;
@@ -483,7 +634,11 @@ T pairingHeap<T, compare>::extract_root()
     // Odd number of nodes
     if(temp != nullptr)
     {
+        if(pairs)
+            pairs->parent = temp;
+            
         temp->right = pairs;
+        temp->parent = nullptr;
         pairs = temp;
     }
 
@@ -500,6 +655,8 @@ T pairingHeap<T, compare>::extract_root()
     {
         node* temp_node = temp;
         temp = temp->right->right;
+        if(temp)
+            temp->parent = nullptr;
         temp_node->right->right = nullptr;
         new_root = merge_node(temp_node,temp_node->right);
     }
@@ -508,6 +665,8 @@ T pairingHeap<T, compare>::extract_root()
     while(temp != nullptr)
     {
         node* temp_node = temp->right;
+        if(temp_node)
+            temp_node->parent = nullptr;
         temp->right = nullptr;
         new_root = merge_node(new_root,temp);
         temp = temp_node;
@@ -516,10 +675,11 @@ T pairingHeap<T, compare>::extract_root()
     // Assigning new root
     T data = root_->data;
     this->root_ = new_root;
+    new_root->parent = nullptr;
     free(root);
 
     this->size_--;
-    return data;
+    return;
 }
 
 /* Recursive function to find the given element and return a pointer to its parent node if found */
@@ -555,17 +715,19 @@ int pairingHeap<T, compare>::remove_element(const T data)
     // If the element is the root of the heap, perform extract_root
     if(this->root_->data == data)
     {
-        T num = extract_root();
+        T num = find_root();
+        extract_root();
         return 1;
     }
 
+    // If element not found
     if(remove_parent == nullptr)
         return -1;
 
     node* root = nullptr;
     int left = 0;
 
-    // Check if element is the right child of left child of parent
+    // Check if element is the right child or left child of parent
     // Make root point to the element
     if((remove_parent->right != nullptr) && (remove_parent->right->data == data))
         root = remove_parent->right;
@@ -587,6 +749,10 @@ int pairingHeap<T, compare>::remove_element(const T data)
             remove_parent->left = root->right;
         else
             remove_parent->right = root->right;
+            
+        if(root->right)
+            root->right->parent = remove_parent;
+            
         free(root);
         this->size_--;
         return 1;
@@ -598,8 +764,15 @@ int pairingHeap<T, compare>::remove_element(const T data)
     // Left-to-right pass for pairing
     while((temp != nullptr) && (temp->right != nullptr))
     {
-        node* next_pair = temp->right->right;        
+        node* next_pair = temp->right->right;   
+        temp->right->right = nullptr;
+        temp->parent = nullptr;     
         node* temp_node = merge_node(temp,temp->right);
+        temp_node->parent = nullptr;
+        
+        if(pairs != nullptr)
+            pairs->parent = temp_node;
+            
         temp_node->right = pairs;
         pairs = temp_node;
         temp = next_pair;
@@ -607,32 +780,40 @@ int pairingHeap<T, compare>::remove_element(const T data)
 
     if(temp != nullptr)
     {
+        if(pairs)
+            pairs->parent = temp;
+            
         temp->right = pairs;
+        temp->parent = nullptr;
         pairs = temp;
     }
 
     temp = pairs;
 
-    // Single node in the heap
+    // One merge
     if(temp->right == nullptr)
     {
         new_root = temp;
         temp = nullptr;
     }
-
-    // Merge the first two nodes into new_root
     else
     {
         node* temp_node = temp;
         temp = temp->right->right;
+        if(temp)
+            temp->parent = nullptr;
+        temp_node->right->right = nullptr;
         new_root = merge_node(temp_node,temp_node->right);
     }
 
-    // Right-to-left pass for merging
+    // Merging until there are no nodes left
     while(temp != nullptr)
     {
+        node* temp_node = temp->right;
+        temp_node->parent = nullptr;
+        temp->right = nullptr;
         new_root = merge_node(new_root,temp);
-        temp = temp->right;
+        temp = temp_node;
     }
 
     // Merge the new root to the parent node
@@ -641,7 +822,14 @@ int pairingHeap<T, compare>::remove_element(const T data)
     else
         remove_parent->right = new_root;
 
+    if(new_root)
+        new_root->parent = remove_parent;
+
     new_root->right = right;
+
+    if(right)
+        right->parent = new_root;
+    
     free(root);
     this->size_--;
     return 1;
@@ -663,6 +851,10 @@ template<typename T, typename compare, typename compare_>
 void insert_heap(pairingHeap<T, compare>& pair1, const pairingHeap<T, compare_>& pair2)
 {
     typename pairingHeap<T, compare_>::node* cloned_heap = pair2.clone_heap(pair2.root_);
+    
+    if(cloned_heap)
+        cloned_heap->parent = nullptr;
+    
     pairingHeap<T, compare_> temp_heap(cloned_heap);
     typename pairingHeap<T, compare_>::exhaustive_iterator it = temp_heap.get_exhaustive_iterator();
 
@@ -691,6 +883,8 @@ void create_heap(pairingHeap<T, compare>& pair1, const pairingHeap<T, compare_>&
 {
     pair1.~pairingHeap();
     typename pairingHeap<T, compare_>::node* cloned_heap = pair2.clone_heap(pair2.root_);
+    if(cloned_heap)
+        cloned_heap->parent = nullptr;
     pairingHeap<T, compare_> temp_heap(cloned_heap);
     typename pairingHeap<T, compare_>::exhaustive_iterator it = temp_heap.get_exhaustive_iterator();
 
@@ -722,7 +916,7 @@ void pairingHeap<T, compare>::display_wrapper(node* root, int indent) const
     }
 
     node* temp = root;
-
+    
     if(temp->left != nullptr)
     {
         temp = temp->left;
@@ -748,26 +942,50 @@ void pairingHeap<T, compare>::display() const
 
 /* Wrapper function to print the elements of the heap in binary tree form in-order */
 template<typename T, typename compare>
-void pairingHeap<T, compare>::inorder_wrap() const
+typename pairingHeap<T, compare>::node* pairingHeap<T, compare>::inorder_successor(node* root) const
 {
-    this->inorder(this->root_);
+    if(root->right)
+    {
+        node* temp = root->right;
+        
+        while(temp->left != nullptr)
+            temp = temp->left;
+        
+        return temp;
+    }
+    
+    node* parent = root->parent;
+    node* temp = root;
+
+    while((parent != nullptr) && (temp == parent->right))
+    {
+        temp = parent;
+        parent = parent->parent;
+    }
+
+    return parent;
 }
 
 /* Function to print the contents of the heap in binary tree format in in-order */
 template<typename T, typename compare>
-void pairingHeap<T, compare>::inorder(const node* root) const
+void pairingHeap<T, compare>::inorder() const
 {
-    if(root != nullptr)
+    node* temp = this->root_;
+        
+    while(temp->left != nullptr)
+        temp = temp->left;
+
+    while(temp != nullptr)
     {
-        inorder(root->left);
-        cout << root->data << " ";
-        inorder(root->right);
+        cout << temp->data << "\t";
+        temp = inorder_successor(temp);
     }
+    cout << "\n";
 }
 
 /* Function to clone the contents of the heap */
 template<typename T, typename compare>
-typename pairingHeap<T, compare>::node* pairingHeap<T, compare>::clone_heap(const node* root) const
+typename pairingHeap<T, compare>::node* pairingHeap<T, compare>::clone_heap(node* root) const
 {
     if(root == nullptr)
         return nullptr;
@@ -776,5 +994,13 @@ typename pairingHeap<T, compare>::node* pairingHeap<T, compare>::clone_heap(cons
     clone_root->data = root->data;
     clone_root->left = clone_heap(root->left);
     clone_root->right = clone_heap(root->right);
+    clone_root->parent = nullptr;
+
+    if(clone_root->left)
+        clone_root->left->parent = clone_root;
+
+    if(clone_root->right)
+        clone_root->right->parent = clone_root;
+
     return clone_root;
 }

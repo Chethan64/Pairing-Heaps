@@ -33,12 +33,10 @@ class comp_b {
 };
 
 class date {
-    private:
+    public:
         int dd_;
         int mm_;
         int yy_;
-
-    public:
         date(int dd = 1, int mm = 1, int yy = 1970) : dd_(dd), mm_(mm), yy_(yy) {}
         friend ostream& operator<<(ostream&, const date&);
         friend bool operator<(const date&, const date&);
@@ -86,166 +84,279 @@ bool operator!=(const date& date1, const date& date2)
 
 int main()
 {
-    #if 1
+    cout << boolalpha;
+    
+    #if 0
+
+    cout << "\n\n---------------------------------------- INTEGERS ----------------------------------------\n";
+
+    cout << "\n-- Max heap --\n";
     pairingHeap<int,more<int>> p1;
+    cout << "\n\nBefore insertion: \n";
+    cout << "Empty: " << p1.is_empty() << "\n";
+    cout << "Size: " << p1.size() << "\n";
+    
     p1.insert(61);
     p1.insert(25);
-    p1.insert(17);
     p1.insert(8);
-    p1.insert(21);
-    p1.insert(233);
     p1.insert(456);
-    p1.insert(55);
     p1.insert(3);
     p1.insert(37);
+
+    cout << "\nAfter insertion: \n";
+    cout << "Empty: " << p1.is_empty() << "\n";
+    cout << "Size: " << p1.size() << "\n\n";
+    cout << "Displaying: \n\n";
     p1.display();
-    cout << "\n\n\n";
+    cout << "\n\n";
 
-    // pairingHeap<int, more<int>>::iterator first = p1.begin();
-    // pairingHeap<int, more<int>>::iterator last = p1.end();
-    // cout << *last << "\n";
-    // pairingHeap<int, more<int>>::iterator it = find_if(first, last, [](int i){return i%2;});
-    // cout << *it << "\n";
-
-    // cout << "Count : " << std::count (p1.begin(), p1.end(), 377) << "\n";
-    // if ( std::all_of(p1.begin(), p1.end(), [](int i){return i%2;}) )
-        // std::cout << "All the elements are odd numbers.\n";
-
-    // cout << *min_element(first, last) << "\n";
-    // cout << *it << "\n";
-    // std::vector<int>::iterator it;
-    // it = std::unique (myvector.begin(), myvector.end());  
-    // while (first != last)   
-    // {   
-    //     if(*first == 37)
-    //     {
-    //         cout << "Element found\n";
-    //         first.stop_iterator();
-    //         break;
-    //     }
-    //     first++;
-    // }
-
-    // p1.display();
+    cout << "Root: " << p1.find_root() << "\n";
+    cout << "Size: " << p1.size() << "\n\n";
+    cout << "-- Extracting root -- \n\n";
+    p1.extract_root();
     
+    cout << "Updated heap: \n";
+    cout << "Size: " << p1.size() << "\n\n";
+    p1.display();
+    
+    cout << "\n\n-- Creating heap from existing heap --\n";
+    pairingHeap<int, less<int>> p2;
+    create_heap(p2,p1); 
+    cout << "\nDisplaying: \n\n";
+    p2.display();
+    cout << "\n\n";
 
-    // pairingHeap<int, more<int>> p2 = p1;
-    // pairingHeap<int, more<int>> p3 = p1;
-    // cout << "\n\n\n" << p2.find_root() << "\n\n\n";
-    // p2.display();
-    // pairingHeap<int, more<int>>::iterator first2 = p2.begin();
-
-    // cout << equal(first,last,first2) << "\n";
-
-    // while(first != last)
-    // {
-    //     if(*first != *first2)
-    //     {
-    //         first.stop_iterator();
-    //         first2.stop_iterator();
-    //         cout << "Not equal\n";
-    //         break;
-    //     }
-    //     first++;
-    //     first2++;
-    // }
-    // cout << "Equal\n";
-    // cout << "size : " << p2.size() << "\n";
-
-    pairingHeap<int, less<int>> p3;
-    create_heap(p3,p1);
+    cout << "\n\n-- Creating heap from elements within a pair of iterators --\n";
+    pairingHeap<int, more<int>> p3;
+    int a1[] = {4, 1, 90};
+    for(auto i:a1)
+        cout << i << "\t";
+    create_heap(p3,a1,a1+3); 
+    cout << "\n\nDisplaying: \n\n";
     p3.display();
-    cout << "size : " << p3.size() << "\n";
+    cout << "\n";
 
-    pairingHeap<char, more<char>> p4;
-    char arr1[] = {'a','c','b','e'};
-    create_heap(p4,arr1,arr1+4);
-    p4.display();
-    cout << "size : " << p4.size() << "\n";
+    cout << "\n\n-- Inserting elements between a pair of iterators to an existing heap --\n";
+    vector<int> v1 = {65, 30, 199};
+    for(auto i:v1)
+        cout << i << "\t";
+    insert_heap(p3, v1.begin(), v1.end());
+    cout << "\n\nDisplaying: \n";
+    cout << "Size: " << p3.size() << "\n\n";
+    p3.display();
+    cout << "\n";
 
-    type_a a1,a2,a3,a4;
-    a1.a = 1;   a1.b = 'd';
-    a2.a = 2;   a2.b = 'c';
-    a3.a = 3;   a3.b = 'b';
-    a4.a = 4;   a4.b = 'a';
-    vector<type_a> v1{a1,a2,a3,a4};
+    cout << "\n\n-- Inserting elements of a heap to an existing heap --\n";
+    insert_heap(p3, p1);
+    cout << "\n\nDisplaying: \n";
+    cout << "Size: " << p3.size() << "\n\n";
+    p3.display();
+    cout << "\n";
 
-    pairingHeap<type_a, comp_a> p5;
-    p5.display();
-    create_heap(p5,v1.begin(),v1.end());
-    p5.display();
-    cout << "size : " << p5.size() << "\n";
-    cout << "\n\n";
+    cout << "\n\n-- Melding two heaps into a new heap --\n";
+    pairingHeap<int,more<int>> m1;
+    m1.insert(8);
+    m1.insert(6);
+    m1.insert(12);
+    cout << "\n\nDisplaying first heap: \n";
+    cout << "Size: " << m1.size() << "\n\n";
+    m1.display();
+    pairingHeap<int,more<int>> m2;
+    m2.insert(4);
+    m2.insert(5);
+    cout << "\n\nDisplaying second heap: \n";
+    cout << "Size: " << m2.size() << "\n\n";
+    m2.display();
+    pairingHeap<int,more<int>> m3;
+    meld(m3,m1,m2);
+    cout << "\n\nDisplaying melded heap: \n";
+    cout << "Size: " << m3.size() << "\n\n";
+    m3.display();
 
-    pairingHeap<type_a, comp_b> p6;
-    create_heap(p6,v1.begin(),v1.end());
-    p6.display();
-    cout << "size : " << p6.size() << "\n";
-    cout << "\n\n";
-
-    type_a arr2[] = {a1,a2,a3,a4};
-    pairingHeap<type_a, comp_a> p7;
-    create_heap(p7,arr2,arr2+2);
-    p7.display();
-    cout << "size : " << p7.size() << "\n";
-    cout << "\n\n";
-
-    pairingHeap<type_a, comp_a> p8;
-    create_heap(p8,arr2+2,arr2+4);
-    create_heap(p8,arr2+2,arr2+4);
-    insert_heap(p8,p7);
-    p8.display();
-    cout << "size : " << p8.size() << "\n"; 
-    cout << "\n\n";   
-
-    pairingHeap<type_a, comp_a> p9;
-    meld(p9,p7,p8);
-    p9.display();
-    cout << "size : " << p9.size() << "\n";
-    cout << "\n\n";
-
-    cout << p9.extract_root() << "\n\n";
-    p9.display();
-    cout << "size : " << p9.size() << "\n";
-
-    pairingHeap<date, more<date>> p10;
-    date d1(29,8,2000);
-    date d2(6,4,2000);
-    date d3(6,4,2020);
-    p10.insert(d1);
-    p10.insert(d2);
-    // p10.remove_element(d2);
-    p10.update_element(d2,d3);
-    
-    cout << "size : " << p10.size() << "\n";
-    p10.display();
-    
-
-    pairingHeap<date, less<date>> p11;
-    create_heap(p11,p10);
-    // cout << "size : " << p11.size() << "\n";
-    p11.display();
-    // cout << p11.size() << "\n";
-    
-    pairingHeap<date, more<date>>::iterator first = p10.begin();
-    pairingHeap<date, more<date>>::iterator last = p10.end();
-    
+    m3.insert(23);
+    m3.insert(37);
+    cout << "\n-- Constant forward iterator --\n\n";
+    cout << "Iterating through: \n\n";
+    m3.display();
+    cout << "\n";
+    pairingHeap<int,more<int>>::inorder_iterator first = m3.cbegin();
+    pairingHeap<int,more<int>>::inorder_iterator last = m3.cend();
     while(first != last)
     {
-        cout << (*first) << "\n";
-        first++;
+        cout << *(first++) << "\t";
     }
+    cout << "\n\n";
 
-    pairingHeap<date, more<date>>::iterator it = find(first, last, d3);
-    int n = 1;
-    if (it != last)
+    cout << "-- Using iterators on STL algorithms --\n\n";
+    cout << "1. Find: \n";
+    int ele = 5;
+    pairingHeap<int, more<int>>::inorder_iterator result = find(m3.cbegin(), m3.cend(), ele);
+    cout << "Finding element " << ele << "\n";
+    if(result != last)
+        cout << "Element found\n\n";
+    else
+        cout << "Element not found\n\n";
+
+    int min_ele = *min_element(m3.cbegin(), m3.cend());
+    cout << "2. Minimum element in the heap: " << min_ele << "\n\n";
+
+    int max_ele = *max_element(m3.cbegin(), m3.cend());
+    cout << "3. Maximum element in the heap: " << max_ele << "\n\n";
+
+    vector<int> v(m3.size());
+    vector<int>::iterator it = v.begin();
+    cout << "4. Using copy - copying the elements to vector:\n";
+    copy(m3.cbegin(), m3.cend(), it);
+    for(auto i:v)
+        cout << i << "\t";
+    cout << "\n\n";
+
+    cout << "5. find_if - find based on predicate (%10 == 7):\n";
+    result = find_if(m3.cbegin(), m3.cend(), [](int i){return i%10 == 7;});
+    cout << "  " << *result << "\n";
+    #endif
+
+    #if 1
+    cout << "\n\n---------------------------------------- DATE ----------------------------------------\n";
+
+    cout << "\n-- Max heap --\n";
+    pairingHeap<date,more<date>> p1_d;
+    cout << "\n\nBefore insertion: \n";
+    cout << "Empty: " << p1_d.is_empty() << "\n";
+    cout << "Size: " << p1_d.size() << "\n";
+    
+    date d1(29, 8, 2000);
+    date d2(6, 4, 2000);
+    date d3(11, 9, 2001);
+    date d4(26, 11, 2001);
+    date d5(11, 1, 1966);
+    date d6(30, 1, 1948);
+
+
+    p1_d.insert(d1);
+    p1_d.insert(d2);
+    p1_d.insert(d3);
+    p1_d.insert(d4);
+    p1_d.insert(d5);
+    p1_d.insert(d6);
+
+    cout << "\nAfter insertion: \n";
+    cout << "Empty: " << p1_d.is_empty() << "\n";
+    cout << "Size: " << p1_d.size() << "\n\n";
+    cout << "Displaying: \n\n";
+    p1_d.display();
+    cout << "\n\n";
+
+    cout << "Root: " << p1_d.find_root() << "\n";
+    cout << "Size: " << p1_d.size() << "\n\n";
+    cout << "-- Extracting root -- \n\n";
+    p1_d.extract_root();
+    
+    cout << "Updated heap: \n";
+    cout << "Size: " << p1_d.size() << "\n\n";
+    p1_d.display();
+    
+    cout << "\n\n-- Creating heap from existing heap --\n";
+    pairingHeap<date, less<date>> p2_d;
+    create_heap(p2_d,p1_d); 
+    cout << "\nDisplaying: \n\n";
+    p2_d.display();
+    cout << "\n\n";
+
+    cout << "\n\n-- Creating heap from elements within a pair of iterators --\n";
+    pairingHeap<date, more<date>> p3_d;
+    date a1[] = {{26, 12, 2004}, {6, 4, 2010}, {29, 8, 2010}};
+    for(auto i:a1)
+        cout << i << "\t";
+    create_heap(p3_d,a1,a1+3); 
+    cout << "\n\nDisplaying: \n\n";
+    p3_d.display();
+    cout << "\n";
+
+    cout << "\n\n-- Inserting elements between a pair of iterators to an existing heap --\n";
+    vector<date> v1 = {{2, 4, 2011}, {31, 12, 2020}, {31, 3, 2021}};
+    for(auto i:v1)
+        cout << i << "\t";
+    insert_heap(p3_d, v1.begin(), v1.end());
+    cout << "\n\nDisplaying: \n";
+    cout << "Size: " << p3_d.size() << "\n\n";
+    p3_d.display();
+    cout << "\n";
+
+    cout << "\n\n-- Inserting elements of a heap to an existing heap --\n";
+    insert_heap(p3_d, p1_d);
+    cout << "\n\nDisplaying: \n";
+    cout << "Size: " << p3_d.size() << "\n\n";
+    p3_d.display();
+    cout << "\n";
+
+    cout << "\n\n-- Melding two heaps into a new heap --\n";
+    pairingHeap<date,more<date>> m1_d;
+    date d7(24, 9, 2019);
+    date d8(7, 1, 2020);
+    date d9(13, 3, 2020);
+    m1_d.insert(d7);
+    m1_d.insert(d8);
+    m1_d.insert(d9);
+    cout << "\n\nDisplaying first heap: \n";
+    cout << "Size: " << m1_d.size() << "\n\n";
+    m1_d.display();
+    pairingHeap<date,more<date>> m2_d;
+    date d10(27, 11, 2020);
+    date d11(13, 11, 2019);
+    m2_d.insert(d10);
+    m2_d.insert(d11);
+    cout << "\n\nDisplaying second heap: \n";
+    cout << "Size: " << m2_d.size() << "\n\n";
+    m2_d.display();
+    pairingHeap<date,more<date>> m3_d;
+    meld(m3_d,m1_d,m2_d);
+    cout << "\n\nDisplaying melded heap: \n";
+    cout << "Size: " << m3_d.size() << "\n\n";
+    m3_d.display();
+
+    date d12(29, 2, 2020);
+    date d13(24, 3, 2021);
+    m3_d.insert(d12);
+    m3_d.insert(d13);
+    cout << "\n-- Constant forward iterator --\n\n";
+    cout << "Iterating through: \n\n";
+    m3_d.display();
+    cout << "\n";
+    pairingHeap<date,more<date>>::inorder_iterator first = m3_d.cbegin();
+    pairingHeap<date,more<date>>::inorder_iterator last = m3_d.cend();
+    while(first != last)
     {
-        cout << "Element " << d3 <<" found at position : " << n << "\n";
-        cout << *it << "\n";
-        n++;
+        cout << *(first++) << "\t";
     }
+    cout << "\n\n";
 
-    p10.display();
+    cout << "-- Using iterators on STL algorithms --\n\n";
+    cout << "1. Find: \n";
+    pairingHeap<date, more<date>>::inorder_iterator result = find(m3_d.cbegin(), m3_d.cend(), d11);
+    cout << "Finding element " << d11 << "\n";
+    if(result != last)
+        cout << "Element found\n\n";
+    else
+        cout << "Element not found\n\n";
+
+    date min_ele = *min_element(m3_d.cbegin(), m3_d.cend());
+    cout << "2. Minimum element in the heap: " << min_ele << "\n\n";
+
+    date max_ele = *max_element(m3_d.cbegin(), m3_d.cend());
+    cout << "3. Maximum element in the heap: " << max_ele << "\n\n";
+
+    vector<date> v(m3_d.size());
+    vector<date>::iterator it = v.begin();
+    cout << "4. Using copy - copying the elements to vector:\n";
+    copy(m3_d.cbegin(), m3_d.cend(), it);
+    for(auto i:v)
+        cout << i << "\t";
+    cout << "\n\n";
+
+    cout << "5. find_if - find based on predicate (%10 == 7):\n";
+    result = find_if(m3_d.cbegin(), m3_d.cend(), [](date i){return i.dd_%10 == 7;});
+    cout << "  " << *result << "\n";
     #endif
 
     return 0;
